@@ -32,12 +32,12 @@ func ColorPrinter(result string, resultColor string) string {
 	italic := color.New(color.Italic).SprintfFunc()
 	red := color.New(color.FgRed).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
-	great := color.New(color.FgHiGreen, color.Bold).SprintFunc()
+	boldGreen := color.New(color.FgHiGreen, color.Bold).SprintFunc()
 	yellow := color.New(color.FgYellow).SprintFunc()
 	blue := color.New(color.FgBlue).SprintFunc()
 
-	if resultColor == "great" {
-		return great(result)
+	if resultColor == "boldgreen" {
+		return boldGreen(result)
 	} else if resultColor == "green" {
 		return green(result)
 	} else if resultColor == "red" {

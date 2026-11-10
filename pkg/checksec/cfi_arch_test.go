@@ -131,7 +131,7 @@ func TestGNUPropertyPayloadAArch64FwdPAC(t *testing.T) {
 	le := binary.LittleEndian
 
 	feat := buildPropertyNote(le, GnuPropertyArmFeature1Flag, GnuPropertyArmFeaturePAC|GnuPropertyArmFeatureBTI)
-	pauth := buildPauthNote(le, 1, 1)
+	pauth := buildPauthNote(le, pauthPlatformLLVMLinux, pauthLLVMLinuxVersionCalls)
 	desc := append(feat, pauth...)
 
 	raw := make([]byte, 16, 16+len(desc))
@@ -163,24 +163,32 @@ func TestCfi_RealELFWithCET(t *testing.T) {
 	}
 }
 
-// TestHwCFIDispatch asserts the per-arch dispatch covers i386 and RISC-V.
+// TestHwCFIDispatch asserts the per-arch dispatch covers i386 and RISC-V, and
+// documents the desc contract: a nil payload means "no .note.gnu.property"
+// and only AArch64 can still produce output then (its software-SCS code
+// probe); every other architecture falls through to Unknown.
 func TestHwCFIDispatch(t *testing.T) {
+	empty := []byte{}
 	tests := []struct {
 		machine elf.Machine
 		class   elf.Class
+		desc    []byte
 		want    bool // should produce a non-empty hwOutput (vs falling through to Unknown)
 	}{
-		{elf.EM_X86_64, elf.ELFCLASS64, true},
-		{elf.EM_386, elf.ELFCLASS32, true},
-		{elf.EM_AARCH64, elf.ELFCLASS64, true},
-		{elf.EM_RISCV, elf.ELFCLASS64, true},
-		{elf.EM_RISCV, elf.ELFCLASS32, true},
-		{elf.EM_MIPS, elf.ELFCLASS64, false},
+		{elf.EM_X86_64, elf.ELFCLASS64, empty, true},
+		{elf.EM_386, elf.ELFCLASS32, empty, true},
+		{elf.EM_AARCH64, elf.ELFCLASS64, empty, true},
+		{elf.EM_RISCV, elf.ELFCLASS64, empty, true},
+		{elf.EM_RISCV, elf.ELFCLASS32, empty, true},
+		{elf.EM_MIPS, elf.ELFCLASS64, empty, false},
+		{elf.EM_X86_64, elf.ELFCLASS64, nil, false},
+		{elf.EM_AARCH64, elf.ELFCLASS64, nil, false}, // no notes and no SCS probe hit
 	}
 	for _, tt := range tests {
-		out, _ := hwCFIDispatch(tt.machine, tt.class, nil, binary.LittleEndian)
+		file := &elf.File{FileHeader: elf.FileHeader{Machine: tt.machine, Class: tt.class}}
+		out, _ := hwCFIDispatch(file, tt.desc)
 		if (out != "") != tt.want {
-			t.Errorf("hwCFIDispatch(%v, %v) out=%q, want non-empty=%v", tt.machine, tt.class, out, tt.want)
+			t.Errorf("hwCFIDispatch(%v, %v, desc=%v) out=%q, want non-empty=%v", tt.machine, tt.class, tt.desc != nil, out, tt.want)
 		}
 	}
 }

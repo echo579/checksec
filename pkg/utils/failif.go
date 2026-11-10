@@ -40,7 +40,7 @@ func ParseFailIfKeys(s string) []string {
 }
 
 // EvaluateFailIf returns every (file, key) where the named check's Status is
-// neither StatusGood nor the higher StatusGreat. An unknown key is an error
+// neither StatusGood nor the higher StatusBoldGreen. An unknown key is an error
 // so typos don't pass silently.
 func EvaluateFailIf(reports []FileReport, required []string) ([]FailIfFailure, error) {
 	if len(required) == 0 {
@@ -69,7 +69,7 @@ func EvaluateFailIf(reports []FileReport, required []string) ([]FailIfFailure, e
 				continue
 			}
 			res, ok := r.Checks[k]
-			if !ok || (res.Status != checksec.StatusGood && res.Status != checksec.StatusGreat) {
+			if !ok || (res.Status != checksec.StatusGood && res.Status != checksec.StatusBoldGreen) {
 				fails = append(fails, FailIfFailure{File: r.Name, Key: k, Result: res})
 			}
 		}
